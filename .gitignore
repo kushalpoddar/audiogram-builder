@@ -1,1 +1,4 @@
 node_modules
+src/handlers/media/audio/*
+src/handlers/media/video/*
+src/handlers/tmp/*

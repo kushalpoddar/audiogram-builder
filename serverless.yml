@@ -1,0 +1,49 @@
+service: l2it-audiogram-builder
+frameworkVersion: '1'
+
+provider:
+  name: aws
+  runtime: nodejs16.x
+  stage: dev
+  region: us-east-1
+  memorySize: 1024
+
+  environment:
+    LUMIGO_TOKEN: ${env:LUMIGO_TOKEN}
+    CORE_TABLE: ${env:CORE_TABLE}
+    AUDIO_BUCKET: ${env:AUDIO_BUCKET}
+    TEMP_AUDIO_BUCKET: ${env:TEMP_AUDIO_BUCKET}
+    DDB_ENDPOINT: ${env:DDB_ENDPOINT}
+  
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:BatchGetItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource: "*"
+    - Effect: Allow
+      Action:
+        - s3:PutObject
+        - s3:GetObject
+        - s3:DeleteObject
+      Resource:
+        - "arn:aws:s3:::${self:provider.environment.AUDIO_BUCKET}/*"
+        - "arn:aws:s3:::${self:provider.environment.TEMP_AUDIO_BUCKET}/*"
+
+functions:
+  handle:
+    handler: src/handlers/handler.handle
+    timeout: 120
+
+# custom:
+#   serverless-offline:
+#     useDocker: true
+
+plugins:
+  - serverless-offline
+  - serverless-dotenv-plugin
