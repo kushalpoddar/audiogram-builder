@@ -24,11 +24,15 @@ const isFileInS3 = async (params) => {
 
 }
 
-const downloadFile = async (id, url) => {
+const downloadFile = async (id, url, folder) => {
+  const Bucket = (folder == "audio") ? process.env.AUDIO_BUCKET : process.env.TEMP_AUDIO_BUCKET
+  
   const params = {
-    Bucket: process.env.AUDIO_BUCKET,
+    Bucket,
     Key: url
   }
+
+  console.log(params)
 
   if (!(await isFileInS3(params))) {
     throw new Error(`${url} doesnt exists`)
@@ -38,7 +42,7 @@ const downloadFile = async (id, url) => {
     s3.getObject(params, (err, data) => {
       if (err) reject(err);
 
-      const filePath = `${__dirname}/media/audio/${id}`
+      const filePath = `${__dirname}/media/${folder}/${id}`
 
       writeFileSync(filePath, data.Body);
 
@@ -68,18 +72,12 @@ const render = async (job) => {
   // const k = path.join(__dirname, "media", "audio", job.id)
   // mkdirp(k)
 
-  var audiogram = new Audiogram(job.id);
-
-  audiogram.settings = job;
+  const audiogram = new Audiogram(job);
 
   return new Promise((resolve, reject) => {
     audiogram.render(function (err) {
-
       if (err) {
-        audiogram.status("error");
-        audiogram.set("error", err.toString());
         reject(err)
-        // throw err;
       }
 
       resolve(`${__dirname}/media/video/${job.id}.mp4`)
@@ -88,7 +86,6 @@ const render = async (job) => {
 }
 
 const updateContent = async (integrationId, contentId, video_url) => {
-  console.log(integrationId, contentId, video_url)
   const timestamp = new Date().toISOString()
 
   await docClient.update({
@@ -109,7 +106,11 @@ const updateContent = async (integrationId, contentId, video_url) => {
 const createVideo = async (job) => {
   try {
     // Downloading the files from aws
-    const audioLocalPath = await downloadFile(job.id, job.url)
+    const audioLocalPath = await downloadFile(job.id, job.url, "audio")
+
+    const srtLocalPath = await downloadFile(job.id, job.srt_url, "srt")
+
+    job.theme.srtLocalPath = srtLocalPath
 
     // Creating the video and returning the local path
     const videoPath = await render(job)
@@ -122,7 +123,7 @@ const createVideo = async (job) => {
 
     // Remove all temporary files created
     unlinkSync(audioLocalPath)
-    unlinkSync(videoPath)
+    // unlinkSync(videoPath)
 
     return videoPath
   } catch (err) {
@@ -132,20 +133,3 @@ const createVideo = async (job) => {
 }
 
 module.exports = createVideo
-
-// render({ id : "7d473f70-acdb-11ed-a757-8dafd375cf36", theme : {
-//   "width": 1280,
-//   "height": 720,
-//   "framesPerSecond": 20,
-//   "maxDuration": 300,
-//   "samplesPerFrame": 128,
-//   "pattern": "wave",
-//   "waveTop": 150,
-//   "waveBottom": 420,
-//   "captionTop": 470,
-//   "captionFont": "300 52px 'Source Sans Pro'",
-//   "captionLineHeight": 52,
-//   "captionLineSpacing": 7,
-//   "captionLeft": 200,
-//   "captionRight": 1080
-// } })

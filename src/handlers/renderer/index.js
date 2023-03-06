@@ -1,21 +1,51 @@
-var d3 = require("d3"),
-    patterns = require("./patterns.js"),
-    textWrapper = require("./text-wrapper.js");
+const patterns = require("./patterns.js")
+const textWrapper = require("./text-wrapper.js");
 
-module.exports = function(t) {
+module.exports = function (t) {
 
-  var renderer = {},
-      backgroundImage,
-      wrapText,
-      theme;
+  let renderer = {},
+    backgroundImage,
+    logoImage,
+    designImages,
+    wrapText,
+    theme,
+    captions;
 
-  renderer.backgroundImage = function(_) {
+  renderer.backgroundImage = function (_) {
     if (!arguments.length) return backgroundImage;
     backgroundImage = _;
     return this;
   };
 
-  renderer.theme = function(_) {
+  renderer.logoImage = function (_) {
+    if (!arguments.length) return logoImage;
+    logoImage = _;
+    return this;
+  };
+
+  renderer.processCaptions = function(_){
+    if (!arguments.length) return captions;
+    
+    captions = _.split("\n\n").map(block => {
+      const child_arr = block.split("\n")
+      const timestamps = child_arr[1].split(" --> ").map(t => ((new Date(`1970-01-01T${t.replace(",", ".")}Z`)).getTime()/1000))
+      return {
+        text : child_arr[2],
+        start : parseInt(Math.round(timestamps[0]*theme.framesPerSecond)),
+        end : parseInt(Math.round(timestamps[1]*theme.framesPerSecond))
+      }
+    });
+    
+    return this;
+  }
+
+  renderer.designImages = function (_) {
+    if (!arguments.length) return designImages;
+    designImages = _;
+    return this;
+  };
+
+  renderer.theme = function (_) {
     if (!arguments.length) return theme;
 
     theme = _;
@@ -37,18 +67,41 @@ module.exports = function(t) {
   };
 
   // Draw the frame
-  renderer.drawFrame = function(context, options){
+  renderer.drawFrame = function (context, options) {
 
     context.patternQuality = "best";
 
     // Draw the background image and/or background color
     context.clearRect(0, 0, theme.width, theme.height);
 
-    context.fillStyle = theme.backgroundColor;
-    context.fillRect(0, 0, theme.width, theme.height);
+    if (theme.backgroundColor) {
+      context.fillStyle = theme.backgroundColor;
+      context.fillRect(0, 0, theme.width, theme.height);
+    }
+
+    if (theme.backgroundGradientColor1 && theme.backgroundGradientColor2) {
+      const gradient = context.createLinearGradient(theme.width/2, 0, theme.width/2, theme.height);
+
+      gradient.addColorStop(0, theme.backgroundGradientColor1);
+      gradient.addColorStop(1, theme.backgroundGradientColor2);
+      context.fillStyle = gradient;
+      context.fillRect(0, 0, theme.width, theme.height);
+    }
 
     if (backgroundImage) {
       context.drawImage(backgroundImage, 0, 0, theme.width, theme.height);
+    }
+
+    if (logoImage) {
+      context.drawImage(logoImage, 0, 0, theme.width, theme.height);
+    }
+
+    if(designImages && designImages.length){
+      const themeImages = theme.design.elements.filter(e => e.type === "IMAGE")
+      for(let eleIndex in designImages){
+        const ele = designImages[eleIndex]
+        context.drawImage(ele, theme.width*(themeImages[eleIndex].boxXPerc), theme.width*(themeImages[eleIndex].boxYPerc), theme.width*(themeImages[eleIndex].boxWPerc), theme.width*(themeImages[eleIndex].boxHPerc));
+      }
     }
 
     patterns[theme.pattern || "wave"](context, options.waveform, theme);

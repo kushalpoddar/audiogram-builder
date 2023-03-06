@@ -12,10 +12,13 @@ const initializeCanvas = require("./initialize-canvas.js")
 const drawFrames = require("./draw-frames.js")
 const combineFrames = require("./combine-frames.js")
 
-function Audiogram(id) {
+function Audiogram(job) {
 
   // Unique audiogram ID
-  this.id = id;
+  this.id = job.id;
+
+  // Settings
+  this.settings = job
 
   // File locations to use
   this.dir = path.join(serverSettings.workingDirectory, this.id);
@@ -23,8 +26,6 @@ function Audiogram(id) {
   this.audioPath = path.join(this.dir, "audio");
   this.videoPath = path.join(this.dir, "video.mp4");
   this.frameDir = path.join(this.dir, "frames");
-
-  console.log({id : this.id, dir : this.dir, audioPath : this.audioPath, videoPath : this.videoPath, frameDir : this.frameDir })
 
   this.profiler = new Profiler();
 
@@ -65,19 +66,12 @@ Audiogram.prototype.getWaveform = function(cb) {
 
 // Initialize the canvas and draw all the frames
 Audiogram.prototype.drawFrames = function(cb) {
-
+  
   var self = this;
 
   this.status("renderer");
 
-  initializeCanvas(this.settings.theme, function(err, renderer){
-
-    if (err) {
-      return cb(err);
-    }
-
-    self.status("frames");
-
+  initializeCanvas(self.settings.theme).then((renderer) => {
     drawFrames(renderer, {
       width: self.settings.theme.width,
       height: self.settings.theme.height,
@@ -89,8 +83,9 @@ Audiogram.prototype.drawFrames = function(cb) {
         transports.incrementField(self.id, "framesComplete");
       }
     }, cb);
-
-  });
+  }).catch(err => {
+    return cb(err);
+  })
 
 };
 
@@ -111,8 +106,8 @@ Audiogram.prototype.combineFrames = function(cb) {
 // Master render function, queue up steps in order
 Audiogram.prototype.render = function(cb) {
 
-  var self = this,
-      q = queue(1);
+  const self = this
+  const q = queue(1);
 
   this.status("audio-download");
 

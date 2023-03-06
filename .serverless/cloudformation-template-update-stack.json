@@ -1,0 +1,225 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "The AWS CloudFormation template for this Serverless application",
+  "Resources": {
+    "ServerlessDeploymentBucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "ServerSideEncryptionByDefault": {
+                "SSEAlgorithm": "AES256"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "ServerlessDeploymentBucketPolicy": {
+      "Type": "AWS::S3::BucketPolicy",
+      "Properties": {
+        "Bucket": {
+          "Ref": "ServerlessDeploymentBucket"
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "s3:*",
+              "Effect": "Deny",
+              "Principal": "*",
+              "Resource": [
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition"
+                      },
+                      ":s3:::",
+                      {
+                        "Ref": "ServerlessDeploymentBucket"
+                      },
+                      "/*"
+                    ]
+                  ]
+                }
+              ],
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": false
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "HandleLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/l2it-audiogram-builder-staging-handle"
+      }
+    },
+    "IamRoleLambdaExecution": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "lambda.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": {
+              "Fn::Join": [
+                "-",
+                [
+                  "l2it-audiogram-builder",
+                  "staging",
+                  "lambda"
+                ]
+              ]
+            },
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogStream",
+                    "logs:CreateLogGroup"
+                  ],
+                  "Resource": [
+                    {
+                      "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/l2it-audiogram-builder-staging*:*"
+                    }
+                  ]
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:PutLogEvents"
+                  ],
+                  "Resource": [
+                    {
+                      "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/l2it-audiogram-builder-staging*:*:*"
+                    }
+                  ]
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "dynamodb:Query",
+                    "dynamodb:Scan",
+                    "dynamodb:GetItem",
+                    "dynamodb:PutItem",
+                    "dynamodb:BatchGetItem",
+                    "dynamodb:UpdateItem",
+                    "dynamodb:DeleteItem"
+                  ],
+                  "Resource": "*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:PutObject",
+                    "s3:GetObject",
+                    "s3:DeleteObject"
+                  ],
+                  "Resource": [
+                    "arn:aws:s3:::l2itstaging-l2itaudiobucketae95ca6b-1xaujsvpo2dn8/*",
+                    "arn:aws:s3:::l2itstaging-l2ittempaudiobucket2f7cef06-xrokci7w4krv/*"
+                  ]
+                }
+              ]
+            }
+          }
+        ],
+        "Path": "/",
+        "RoleName": {
+          "Fn::Join": [
+            "-",
+            [
+              "l2it-audiogram-builder",
+              "staging",
+              {
+                "Ref": "AWS::Region"
+              },
+              "lambdaRole"
+            ]
+          ]
+        }
+      }
+    },
+    "HandleLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ServerlessDeploymentBucket"
+          },
+          "S3Key": "serverless/l2it-audiogram-builder/staging/1677038794377-2023-02-22T04:06:34.377Z/l2it-audiogram-builder.zip"
+        },
+        "FunctionName": "l2it-audiogram-builder-staging-handle",
+        "Handler": "src/handlers/handler.handle",
+        "MemorySize": 1024,
+        "Role": {
+          "Fn::GetAtt": [
+            "IamRoleLambdaExecution",
+            "Arn"
+          ]
+        },
+        "Runtime": "nodejs16.x",
+        "Timeout": 120,
+        "Environment": {
+          "Variables": {
+            "LUMIGO_TOKEN": "t_5fe9e238cf384a339c27f",
+            "CORE_TABLE": "L2ItStaging-L2ITCORETABLE10279D10-6Q464ZI518N3",
+            "AUDIO_BUCKET": "l2itstaging-l2itaudiobucketae95ca6b-1xaujsvpo2dn8",
+            "TEMP_AUDIO_BUCKET": "l2itstaging-l2ittempaudiobucket2f7cef06-xrokci7w4krv",
+            "DDB_ENDPOINT": "https://dynamodb.us-east-1.amazonaws.com"
+          }
+        }
+      },
+      "DependsOn": [
+        "HandleLogGroup"
+      ]
+    },
+    "HandleLambdaVersionHlt7r6mIB5U6qeW1XzzSfuJHuaky4Mby4Bf1NLSabM": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "HandleLambdaFunction"
+        },
+        "CodeSha256": "d7ybWB74igC9x8kfx8seeG9G1Oc5JHyPXtogz7d9rRY="
+      }
+    }
+  },
+  "Outputs": {
+    "ServerlessDeploymentBucketName": {
+      "Value": {
+        "Ref": "ServerlessDeploymentBucket"
+      }
+    },
+    "HandleLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "HandleLambdaVersionHlt7r6mIB5U6qeW1XzzSfuJHuaky4Mby4Bf1NLSabM"
+      }
+    }
+  }
+}
