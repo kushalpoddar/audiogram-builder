@@ -9,11 +9,9 @@ provider:
   memorySize: 1024
 
   environment:
-    CORE_TABLE: ${env:CORE_TABLE}
     AUDIO_BUCKET: ${env:AUDIO_BUCKET}
     SRT_BUCKET: ${env:SRT_BUCKET}
     VIDEO_BUCKET : ${env:VIDEO_BUCKET}
-    DDB_ENDPOINT: ${env:DDB_ENDPOINT}
   
   iamRoleStatements:
     - Effect: Allow

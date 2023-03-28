@@ -2,7 +2,6 @@ const path = require("path")
 const { writeFileSync, readFileSync, unlinkSync, rmSync } = require("fs")
 const AWS = require("aws-sdk");
 const s3 = new AWS.S3();
-const { DocumentClient: docClient } = require('./utils/ddb');
 // Require settings first, for validation
 require("./lib/settings/");
 
