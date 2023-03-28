@@ -1,7 +1,15 @@
 {
+    "theme": "rectangle_ceo",
     "org_id": "x2FA1tbNcz",
     "id": "aAGfQkJeH2",
     "contentId": "k6mHkpvtsc",
-    "url": "aAGfQkJeH2/k6mHkpvtsc/fa-ynIMxi7R_c.mp3",
-    "srt_url": "x2FA1tbNcz/aAGfQkJeH2/srt/SUBTITLE-454693c0-5ee3-4162-8d51-12de584bc77f.srt"
+    "audio_url": "aAGfQkJeH2/k6mHkpvtsc/fa-ynIMxi7R_c.mp3",
+    "srt_url": "x2FA1tbNcz/aAGfQkJeH2/srt/SUBTITLE-1762b101-6ab2-4c5a-ac0c-3d274f4a3dce.srt",
+    "theme_settings": {
+        "framesPerSecond": 10,
+        "pattern": "wave",
+        "foregroundColor": "#000",
+        "captionColor": "#000",
+        "backgroundColor" : "#f0f"
+    }
 }

@@ -9,10 +9,10 @@ provider:
   memorySize: 1024
 
   environment:
-    LUMIGO_TOKEN: ${env:LUMIGO_TOKEN}
     CORE_TABLE: ${env:CORE_TABLE}
     AUDIO_BUCKET: ${env:AUDIO_BUCKET}
-    TEMP_AUDIO_BUCKET: ${env:TEMP_AUDIO_BUCKET}
+    SRT_BUCKET: ${env:SRT_BUCKET}
+    VIDEO_BUCKET : ${env:VIDEO_BUCKET}
     DDB_ENDPOINT: ${env:DDB_ENDPOINT}
   
   iamRoleStatements:
@@ -33,7 +33,8 @@ provider:
         - s3:DeleteObject
       Resource:
         - "arn:aws:s3:::${self:provider.environment.AUDIO_BUCKET}/*"
-        - "arn:aws:s3:::${self:provider.environment.TEMP_AUDIO_BUCKET}/*"
+        - "arn:aws:s3:::${self:provider.environment.SRT_BUCKET}/*"
+        - "arn:aws:s3:::${self:provider.environment.VIDEO_BUCKET}/*"
 
 functions:
   handle:

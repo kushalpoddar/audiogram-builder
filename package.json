@@ -9,7 +9,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@lumigo/tracer": "^1.79.4",
     "aws-sdk": "^2.1319.0",
     "canvas": "^2.11.0",
     "d3": "^4.10.0",

@@ -5,29 +5,21 @@ const Canvas = require("canvas")
 const svg_to_png = require('svg-to-png');
 const getRenderer = require("../renderer/");
 
-const initializeCanvas = async (theme) => {
+const initializeCanvas = async (job_id, theme) => {
   try {
+    console.log("JOB", job_id)
     // Fonts pre-registered in bin/worker
     const renderer = getRenderer(theme);
-
-    if (theme.design && theme.design.elements) {
-      const design_elements = await Promise.all(theme.design.elements.filter(e => e.type == "IMAGE").map(e => fsPromises.readFile(path.join(__dirname, "..", "settings", "backgrounds", e.path))))
-      const design_images = design_elements.map(ele => {
-        const ele_img = new Canvas.Image
-        ele_img.src = ele
-        return ele_img
-      })
-
-      renderer.designImages(design_images)
-    }
 
     if (theme.backgroundImage) {
       
       // Convert SVG to PNG
-      await svg_to_png.convert(path.join(__dirname, "..", "settings", "backgrounds", theme.backgroundImage), path.join(__dirname, "..", "settings", "backgrounds"))
+      console.log("21111", path.join(__dirname, "..", "settings", "backgrounds", theme.backgroundImage))
+      console.log("11111", path.join(__dirname, "..", "media", "theme", job_id))
+      await svg_to_png.convert(path.join(__dirname, "..", "settings", "backgrounds", theme.backgroundImage), path.join(__dirname, "..", "media", "theme", job_id))
       
       // Load background image from file (done separately so renderer code can work in browser too)
-      const raw = await fsPromises.readFile(path.join(__dirname, "..", "settings", "backgrounds", path.basename(theme.backgroundImage.replace(".svg", ".png"))))
+      const raw = await fsPromises.readFile(path.join(__dirname, "..", "media", "theme", job_id, path.basename(theme.backgroundImage.replace(".svg", ".png"))))
 
       const bg = new Canvas.Image;
       bg.src = raw;

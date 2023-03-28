@@ -38,16 +38,13 @@ Audiogram.prototype.getWaveform = function(cb) {
 
   var self = this;
 
-  this.status("probing");
-
   probe(this.audioPath, function(err, data){
     if (err) {
       return cb(err);
     }
 
     self.profiler.size(data.duration);
-    self.set("numFrames", self.numFrames = Math.floor(data.duration * self.settings.theme.framesPerSecond));
-    self.status("waveform");
+    self.numFrames = Math.floor(data.duration * self.settings.theme.framesPerSecond)
 
     getWaveform(self.audioPath, {
       numFrames: self.numFrames,
@@ -69,9 +66,7 @@ Audiogram.prototype.drawFrames = function(cb) {
   
   var self = this;
 
-  this.status("renderer");
-
-  initializeCanvas(self.settings.theme).then((renderer) => {
+  initializeCanvas(self.id, self.settings.theme).then((renderer) => {
     drawFrames(renderer, {
       width: self.settings.theme.width,
       height: self.settings.theme.height,
@@ -80,7 +75,7 @@ Audiogram.prototype.drawFrames = function(cb) {
       caption: self.settings.caption,
       waveform: self.waveform,
       tick: function() {
-        transports.incrementField(self.id, "framesComplete");
+        self.framesComplete = (self.framesComplete || 0) + 1
       }
     }, cb);
   }).catch(err => {
@@ -91,8 +86,6 @@ Audiogram.prototype.drawFrames = function(cb) {
 
 // Combine the frames and audio into the final video with FFmpeg
 Audiogram.prototype.combineFrames = function(cb) {
-
-  this.status("combine");
 
   combineFrames({
     framePath: path.join(this.frameDir, "%06d.png"),
@@ -108,8 +101,6 @@ Audiogram.prototype.render = function(cb) {
 
   const self = this
   const q = queue(1);
-
-  this.status("audio-download");
 
   // Set up tmp directory
   q.defer(mkdirp, this.frameDir);
@@ -135,27 +126,12 @@ Audiogram.prototype.render = function(cb) {
   // Final callback, results in a URL where the finished video is accessible
   q.await(function(err){
 
-    if (!err) {
-      self.set("url", transports.getURL(self.id));
-    }
-
     return cb(err);
 
   });
 
   return this;
 
-};
-
-Audiogram.prototype.set = function(field, value) {
-  transports.setField(this.id, field, value);
-  return this;
-};
-
-// Convenience method for .set("status")
-Audiogram.prototype.status = function(value) {
-  this.profiler.start(value);
-  return this.set("status", value);
 };
 
 module.exports = Audiogram;

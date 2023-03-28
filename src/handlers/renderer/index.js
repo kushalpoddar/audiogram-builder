@@ -5,8 +5,6 @@ module.exports = function (t) {
 
   let renderer = {},
     backgroundImage,
-    logoImage,
-    designImages,
     wrapText,
     theme,
     captions;
@@ -14,12 +12,6 @@ module.exports = function (t) {
   renderer.backgroundImage = function (_) {
     if (!arguments.length) return backgroundImage;
     backgroundImage = _;
-    return this;
-  };
-
-  renderer.logoImage = function (_) {
-    if (!arguments.length) return logoImage;
-    logoImage = _;
     return this;
   };
 
@@ -38,12 +30,6 @@ module.exports = function (t) {
     
     return this;
   }
-
-  renderer.designImages = function (_) {
-    if (!arguments.length) return designImages;
-    designImages = _;
-    return this;
-  };
 
   renderer.theme = function (_) {
     if (!arguments.length) return theme;
@@ -90,18 +76,6 @@ module.exports = function (t) {
 
     if (backgroundImage) {
       context.drawImage(backgroundImage, 0, 0, theme.width, theme.height);
-    }
-
-    if (logoImage) {
-      context.drawImage(logoImage, 0, 0, theme.width, theme.height);
-    }
-
-    if(designImages && designImages.length){
-      const themeImages = theme.design.elements.filter(e => e.type === "IMAGE")
-      for(let eleIndex in designImages){
-        const ele = designImages[eleIndex]
-        context.drawImage(ele, theme.width*(themeImages[eleIndex].boxXPerc), theme.width*(themeImages[eleIndex].boxYPerc), theme.width*(themeImages[eleIndex].boxWPerc), theme.width*(themeImages[eleIndex].boxHPerc));
-      }
     }
 
     patterns[theme.pattern || "wave"](context, options.waveform, theme);

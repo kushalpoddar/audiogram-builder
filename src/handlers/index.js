@@ -1,5 +1,5 @@
 const path = require("path")
-const { writeFileSync, readFileSync, unlinkSync } = require("fs")
+const { writeFileSync, readFileSync, unlinkSync, rmSync } = require("fs")
 const AWS = require("aws-sdk");
 const s3 = new AWS.S3();
 const { DocumentClient: docClient } = require('./utils/ddb');
@@ -24,15 +24,17 @@ const isFileInS3 = async (params) => {
 
 }
 
+// Downloading file from s3 in media directory with name = id
 const downloadFile = async (id, url, folder) => {
-  const Bucket = (folder == "audio") ? process.env.AUDIO_BUCKET : process.env.TEMP_AUDIO_BUCKET
-  
-  const params = {
-    Bucket,
-    Key: url
+  const bucketMapping = {
+    "audio" : process.env.AUDIO_BUCKET,
+    "srt" : process.env.SRT_BUCKET
   }
 
-  console.log(params)
+  const params = {
+    Bucket : bucketMapping[folder] ,
+    Key: url
+  }
 
   if (!(await isFileInS3(params))) {
     throw new Error(`${url} doesnt exists`)
@@ -53,11 +55,11 @@ const downloadFile = async (id, url, folder) => {
 
 const uploadFile = async (job, url) => {
 
-  const videoKey = job.url.replace(".mp3", ".mp4")
+  const videoKey = job.audio_url.replace(".mp3", ".mp4")
   const fullVideo = readFileSync(url)
 
   await s3.putObject({
-    Bucket: process.env.AUDIO_BUCKET,
+    Bucket: process.env.VIDEO_BUCKET,
     Key: videoKey,
     Body: fullVideo
   }).promise();
@@ -67,10 +69,6 @@ const uploadFile = async (job, url) => {
 }
 
 const render = async (job) => {
-
-  // Creating a directory
-  // const k = path.join(__dirname, "media", "audio", job.id)
-  // mkdirp(k)
 
   const audiogram = new Audiogram(job);
 
@@ -85,32 +83,19 @@ const render = async (job) => {
   })
 }
 
-const updateContent = async (integrationId, contentId, video_url) => {
-  const timestamp = new Date().toISOString()
-
-  await docClient.update({
-    TableName: process.env.CORE_TABLE,
-    Key: {
-      PK: 'INTEGRATION#' + integrationId,
-      SK: 'CONTENT#' + contentId
-    },
-    UpdateExpression: 'set video_url = :video_url, updated_at = :updated_at',
-    ExpressionAttributeValues: {
-      ':video_url': video_url,
-      ':updated_at': timestamp,
-    }
-  }).promise();
-
-}
-
 const createVideo = async (job) => {
   try {
     // Downloading the files from aws
-    const audioLocalPath = await downloadFile(job.id, job.url, "audio")
-
-    const srtLocalPath = await downloadFile(job.id, job.srt_url, "srt")
-
+    const [audioLocalPath, srtLocalPath] = await Promise.all([
+      downloadFile(job.id, job.audio_url, "audio"),
+      downloadFile(job.id, job.srt_url, "srt")
+    ])
+    
     job.theme.srtLocalPath = srtLocalPath
+
+    // Creating a folder for storing theme image (png from svg), i.e., PNG image without captions & waveform
+    const themeLocalPath = `${__dirname}/media/theme/${job.id}`
+    mkdirp(themeLocalPath)
 
     // Creating the video and returning the local path
     const videoPath = await render(job)
@@ -118,14 +103,13 @@ const createVideo = async (job) => {
     // Upload to s3
     const videoS3URL = await uploadFile(job, videoPath)
 
-    // Update content db
-    await updateContent(job.integrationId, job.contentId, videoS3URL)
-
     // Remove all temporary files created
     unlinkSync(audioLocalPath)
-    // unlinkSync(videoPath)
+    unlinkSync(srtLocalPath)
+    unlinkSync(videoPath)
+    rmSync(themeLocalPath, { recursive: true, force: true });
 
-    return videoPath
+    return videoS3URL
   } catch (err) {
     throw new Error(err)
   }
