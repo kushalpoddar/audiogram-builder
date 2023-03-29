@@ -98,5 +98,6 @@ __captionRight__: Distance in pixels from left for subtitles end point
 
 __backgroundImage__: SVG file name for audiogram theme template
 
+#### 🤝 Contributing
 
-
+#### ⚖️ LICENSE
