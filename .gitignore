@@ -4,3 +4,5 @@ src/handlers/media/video/*
 src/handlers/media/srt/*
 src/handlers/media/theme/*
 src/handlers/tmp/*
+.env.prod
+.env.staging
