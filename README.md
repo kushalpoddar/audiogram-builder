@@ -6,6 +6,10 @@ Audiogram-Serverless is a ready-to-use serverless lambda for creating shareable 
 * Upload the video file in a video bucket (specified in .env) and return the path
 * Can be customized with various themes, fonts and wave patterns
 
+## 📖Prerequisites
+
+In order to run the project, we should be having node `node>=16`, `serverless>=3^`, `ffmpeg latest version`, `s3 buckets`
+
 
 ## 🖥️Run & Test Locally
 
@@ -57,11 +61,6 @@ Invoke Lambda Locally
 ```bash
   sls invoke local --function handle --path test_event.json
 ```
-
-
-## 📖Prerequisites
-
-In order to run the project, we should be having node `node>=16` and `serverless>=3^`
 
 ## 🚀Production Deployment
 
